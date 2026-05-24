@@ -1,0 +1,37 @@
+name: Daily GitHub Trending Digest
+
+on:
+  schedule:
+    # 每天北京时间 21:00 运行 (UTC 13:00)
+    - cron: '0 13 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  fetch-trending:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 需要写入权限来提交文件
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests beautifulsoup4
+        
+    - name: Fetch GitHub Trending
+      run: python fetch_trending.py
+      
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add digest/*.md
+        git diff --staged --quiet || (git commit -m "Update trending digest for $(date +%Y-%m-%d)" && git push)
